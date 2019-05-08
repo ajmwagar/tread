@@ -1,0 +1,11 @@
+it's not, and this appears to be directed at the layperson as warning to leave it to their betters.
+
+If the implementation does not exist for your language, someone is going to need to do it. It is not as if there are not going to be enough test cases, and if you are a professional there will be peer review and further testing.
+
+Yes it needs to be correct, but if it is a published (and previously implemented in other languages) then it should almost be boilerplate.
+
+So maybe you shouldn't do it, but obviously someone has to. If it is not done you will have to call something else to cover your gap, which is never desirable.
+
+It should of course be written so that a security professional can recognise it by visual "fingerprint" on sight.
+
+
