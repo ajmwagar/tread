@@ -1,11 +1,11 @@
 #![feature(duration_float)]
 use std::{error::Error, thread, time::Duration};
-use termion::{color, style};
+use termion::{color};
 use termion::event::Key;
 use termion::input::TermRead;
 use termion::raw::IntoRawMode;
 use termion::async_stdin;
-use std::io::{Write, Read,stdout, stdin};
+use std::io::{Write, stdout};
 use structopt::StructOpt;
 
 
@@ -27,10 +27,13 @@ fn main() -> Result<(), Box<dyn Error>>{
            termion::cursor::Hide)?;
 
     // A minute
-    let mut MINUTE_SECS: f64 = 60.0;
+    const MINUTE_SECS: f64 = 60.0;
 
     // Speed of WPM interpolation
-    let mut WPM_SPEED: f64 = 10.0;
+    const WPM_SPEED: f64 = 10.0;
+    // Current minimum
+    const MIN_WPM: f64 = 200.0;
+
     // Current MAXimum WPM
     let mut MAX_WPM: f64 = 300.0;
     /// Starting WPM
@@ -51,12 +54,10 @@ fn main() -> Result<(), Box<dyn Error>>{
     let mut hide = false;
     let mut pause = false;
 
+
+    let mut old_word = String::new();
     loop {
         let (width, height) = termion::terminal_size()?;
-
-
-        // Clear the screen
-        write!(stdout, "{}", termion::clear::All)?;
 
         match stdin.next() {
             Some(key) => {
@@ -74,7 +75,6 @@ fn main() -> Result<(), Box<dyn Error>>{
                     },
 
                     // Quit
-                    Key::Esc => break,
                     Key::Char('q') => break,
                     // hide the status bar
                     Key::Char('h') => hide = !hide,
@@ -92,35 +92,54 @@ fn main() -> Result<(), Box<dyn Error>>{
 
                     // Rewind
                     Key::Left => {
-                        pause = true;
+                        if pause != true {
+                            pause = true;
+                        }
                         sr.prev();
                     },
                     // Fast-forward
                     Key::Right => {
-                        pause = true;
+                        if pause != true {
+                            pause = true;
+                        }
                         sr.next();
                     },
-                    _ => {},
+                    _ => {
+                    },
                 }
             }
             _ => {},
         }
 
+
+        // Clear the screen
+        // write!(stdout, "{}", termion::clear::All)?;
+
         if !hide {
             // Terminal Status bar
-            let status_bar = format!("WPM: {} WORD: {}/{} TIME LEFT: {}m, PAUSED: {}", wpm, sr.index, sr.words.len(), sr.words.len() / wpm as usize, pause);
+            let status_bar = format!("WPM: {} MAX_WPM: {} WORD: {}/{} TIME LEFT: {}m, PAUSED: {}", wpm, MAX_WPM, sr.index, sr.words.len(), sr.words.len() / wpm as usize, pause);
             let status_width = (width / 2) as isize - status_bar.len() as isize / 2;
+
 
             if status_width <= 0 {
                 // hide = true;
             }
             else {
-                write!(stdout, "{}{}{}{}", color::Fg(color::Rgb(0, 255,0)), termion::cursor::Goto(status_width as u16, 0), status_bar, color::Fg(color::Reset))?;
+                
+                write!(stdout, "{}{}{}{}{}", color::Fg(color::Rgb(0, 255,0)), termion::cursor::Goto(status_width as u16, 0), termion::clear::CurrentLine, status_bar, color::Fg(color::Reset))?;
+                stdout.flush()?;
             }
         }
 
+
         let word = sr.get_word();
-        write!(stdout, "{}{}", termion::cursor::Goto(width / 2 - (word.len() / 2) as u16, height / 2), word)?;
+
+        if old_word != word {
+            write!(stdout, "{}{}{}", termion::cursor::Goto(width / 2 - (word.len() / 2) as u16, height / 2), termion::clear::CurrentLine, word)?;
+            stdout.flush()?;
+        }
+
+        old_word = word;
 
         if !pause {
             if wpm < MAX_WPM {
@@ -130,14 +149,16 @@ fn main() -> Result<(), Box<dyn Error>>{
                 wpm = MAX_WPM;
             }
 
-                sr.next();
+            if wpm <= MIN_WPM {
+                wpm = MIN_WPM;
+            }
 
-            stdout.flush()?;
-            thread::sleep(Duration::from_secs_f64(MINUTE_SECS / wpm ));
+            sr.next();
+
         }
-        else {
-            stdout.flush()?;
-        }
+
+        thread::sleep(Duration::from_secs_f64(MINUTE_SECS / wpm ));
+
     }
 
     write!(stdout, "{}{}{}",

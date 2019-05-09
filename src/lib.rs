@@ -1,6 +1,4 @@
 #![feature(duration_float)]
-
-
 #[macro_use]
 extern crate structopt;
 
@@ -19,6 +17,13 @@ use std::io::{self, Write};
 
 use std::{thread, time::Duration};
 
+/// State of the Reader
+pub struct State {
+    wpm: f64,
+    hide: bool,
+    pause: bool,
+}
+
 /// A basic example
 #[derive(StructOpt, Debug)]
 #[structopt(name = "tread")]
@@ -28,10 +33,10 @@ pub struct Opt {
     pub files: Vec<PathBuf>,
 }
 
+/// Read file word by word
 pub struct SpeedReader {
     pub index: usize,
     pub words: Vec<String>,
-    file: PathBuf
 }
 
 impl SpeedReader {
@@ -48,7 +53,6 @@ impl SpeedReader {
         Ok(SpeedReader {
             index: 0,
             words: words,
-            file: path
         })
 
     }
@@ -69,7 +73,7 @@ impl SpeedReader {
 
     /// Return the current word
     pub fn get_word(&self) -> String {
-        if self.index >= 0 && self.index < self.words.len() {
+        if self.index < self.words.len() {
             self.words[self.index].clone()
         }
         else {
