@@ -6,7 +6,7 @@ tread - (**T**erminal **Read**er) is a tool to help you read documents and e-boo
 
 - Supports multiple file-formats:
   - Plaintext (txt, markdown, etc)
-  - E-books (epub, pdf, mobi)
+  - **Coming Soon!** E-books (epub, pdf, mobi)
   - Web Formats (html)
 - Toggleable Status Bar
 - Pause, Rewind, Fastforward Controls
